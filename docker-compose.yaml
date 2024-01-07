@@ -1,0 +1,58 @@
+version: '3.1'
+
+services:
+  mysql:
+    image: mysql:8.1.0
+    container_name: mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: cenima_booking
+    ports:
+      - 3306:3306
+    volumes:
+      - ./mysql/cinema_data.sql:/docker-entrypoint-initdb.d/init-script.sql
+    networks:
+      - cinema-network
+  
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin
+    restart: always
+    depends_on:
+      - mysql
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - 8080:80
+    networks:
+      - cinema-network
+
+  redis:
+    image: docker.io/redis:7.2.3
+    container_name: redis
+    restart: always
+    ports:
+      - 6379:6379
+    volumes:
+      - ./redis/data:/data
+    networks:
+      - cinema-network
+  
+  cinema-booking:
+    build: .
+    container_name: cinema-booking
+    restart: always
+    depends_on:
+      - mysql
+      - redis
+    ports:
+      - 3001:3001
+    networks:
+      - cinema-network
+
+networks:
+  cinema-network:
+    driver: bridge
